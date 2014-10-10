@@ -42,7 +42,7 @@ class HandRanking(object):
         """ Check RANK_STRAIGHT_FLUSH """
         card_list.sort()
         """ Hand size is 5, so check the first card in each window of 5 """
-        for i in range(card_list_len - 5):
+        for i in range(card_list_len - 5, -1, -1):
             """ Begin with just the current card in list for this player's best hand """
             self.player_best_hand_dict[player.name] = []
             self.player_best_hand_dict[player.name].append(Card(card_list[i].suit, card_list[i].rank))
@@ -58,22 +58,24 @@ class HandRanking(object):
                     return HandRanking.RANK_STRAIGHT_FLUSH
 
         """ Check RANK_FOUR_OF_A_KIND """
+        card_list.sort()
+        self.player_best_hand_dict[player.name] = []
         """ Don't need to check the last three cards since they would be matches """
-        for i in range(card_list_len - 3):
+        for i in range(card_list_len - 4, -1, -1):
             self.player_best_hand_dict[player.name] = []
             if (self.handContainsNumRank(card_list, card_list[i].rank) == 4):
                 """ Add these four cards to the best hand """
                 for j in range(4):
-                    self.player_best_hand_dict[player.name].append(Card(card_list[i+j].suit, card_list[i+j].rank))
+                    self.player_best_hand_dict[player.name].append(Card(card_list[i+j].suit, card_list[i].rank))
                 """ Need to add one more card to the best 5 """
-                if i+1 == card_list_len - 4:
-                    self.player_best_hand_dict[player.name].append(Card(card_list[i-1].suit, card_list[i-1].rank))
-                else:
-                    """ Add the last card, which is the highest rank """
-                    self.player_best_hand_dict[player.name].append(Card(card_list[-1].suit, card_list[-1].rank))
+                for j in range(card_list_len - 1, -1, -1):
+                    if card_list[j].rank != card_list[i].rank:
+                        self.player_best_hand_dict[player.name].insert(0, Card(card_list[i-1].suit, card_list[i-1].rank))
                 return HandRanking.RANK_FOUR_OF_A_KIND
 
         """ Check RANK_FULL_HOUSE """
+        card_list.sort()
+        self.player_best_hand_dict[player.name] = []
         """ If there is a full house, we need to search in reverse since there could be two sets of three """
         for i in range(card_list_len-1, -1, -1):
             """ Check for the three of a kind portion """
@@ -98,43 +100,48 @@ class HandRanking(object):
                         for k in range(card_list_len):
                             if card_list[k].rank == full_house_two_of:
                                 if num_added < 2:
-                                    self.player_best_hand_dict[player.name].append(Card(card_list[k].suit, card_list[k].rank))
+                                    self.player_best_hand_dict[player.name].insert(0, Card(card_list[k].suit, card_list[k].rank))
                                     num_added += 1
                         return HandRanking.RANK_FULL_HOUSE
 
         """ Check RANK_FLUSH """
+        card_list.sort()
+        self.player_best_hand_dict[player.name] = []
         if (self.handContainsNumSuit(card_list, 0) >=5):
             """ Check in reverse order to get highest ranks """
             num_added = 0
             for i in range(card_list_len-1, -1, -1):
                 if card_list[i].suit == 0 and num_added < 5:
-                    self.player_best_hand_dict[player.name].append(Card(card_list[i].suit, card_list[i].rank))
+                    self.player_best_hand_dict[player.name].insert(0, Card(card_list[i].suit, card_list[i].rank))
             return HandRanking.RANK_FLUSH
         elif (self.handContainsNumSuit(card_list, 1) >=5):
             """ Check in reverse order to get highest ranks """
             num_added = 0
             for i in range(card_list_len-1, -1, -1):
                 if card_list[i].suit == 1 and num_added < 5:
-                    self.player_best_hand_dict[player.name].append(Card(card_list[i].suit, card_list[i].rank))
+                    self.player_best_hand_dict[player.name].insert(0, Card(card_list[i].suit, card_list[i].rank))
             return HandRanking.RANK_FLUSH
         elif (self.handContainsNumSuit(card_list, 2) >=5):
             """ Check in reverse order to get highest ranks """
             num_added = 0
             for i in range(card_list_len-1, -1, -1):
                 if card_list[i].suit == 2 and num_added < 5:
-                    self.player_best_hand_dict[player.name].append(Card(card_list[i].suit, card_list[i].rank))
+                    self.player_best_hand_dict[player.name].insert(0, Card(card_list[i].suit, card_list[i].rank))
             return HandRanking.RANK_FLUSH
         elif (self.handContainsNumSuit(card_list, 3) >=5):
             """ Check in reverse order to get highest ranks """
             num_added = 0
             for i in range(card_list_len-1, -1, -1):
                 if card_list[i].suit == 3 and num_added < 5:
-                    self.player_best_hand_dict[player.name].append(Card(card_list[i].suit, card_list[i].rank))
+                    self.player_best_hand_dict[player.name].insert(0, Card(card_list[i].suit, card_list[i].rank))
             return HandRanking.RANK_FLUSH
 
         """ Check RANK_STRAIGHT """
+        card_list.sort()
+        self.player_best_hand_dict[player.name] = []
+        """ TODO: account for low ace straight """
         """ Don't need to check the last four cards since they would be the end of the straight """
-        for i in range(card_list_len - 4):
+        for i in range(card_list_len - 5, -1, -1):
             self.player_best_hand_dict[player.name] = []
             self.player_best_hand_dict[player.name].append(Card(card_list[i].suit, card_list[i].rank))
             num_consecutive = 1
@@ -149,66 +156,84 @@ class HandRanking(object):
                 return HandRanking.RANK_STRAIGHT
 
         """ Check RANK_THREE_OF_A_KIND """
+        card_list.sort()
+        self.player_best_hand_dict[player.name] = []
         """ Don't need to check the last two cards since they would be included in a potential group of three """
-        for i in range(card_list_len - 2):
+        for i in range(card_list_len - 3, -1, -1):
             if self.handContainsNumRank(card_list, card_list[i].rank) >= 3:
                 self.player_best_hand_dict[player.name] = []
-                self.player_best_hand_dict[player.name].append(Card(card_list[i].suit, card_list[i].rank))
                 """ Find the rest of the three cards in the hand """
-                for j in range(i, card_list_len):
-                    if card_list[j].rank == 3:
+                for j in range(card_list_len):
+                    if card_list[j].rank == card_list[i].rank:
                         self.player_best_hand_dict[player.name].append(Card(card_list[j].suit, card_list[j].rank))
                 """ Find the two highest ranking remaining cards to use - search in reverse """
                 num_added = 0
                 for j in range(card_list_len-1, -1, -1):
                     if card_list[j].rank != card_list[i].rank:
-                        self.player_best_hand_dict[player.name].append(Card(card_list[j].suit, card_list[j].rank))
+                        """ Insert before the group of three for prioritization reasons """
+                        self.player_best_hand_dict[player.name].insert(0, Card(card_list[j].suit, card_list[j].rank))
                         num_added += 1
                     if num_added >= 2:
                         return HandRanking.RANK_THREE_OF_A_KIND
 
         """ Check RANK_TWO_PAIR """
+        card_list.sort()
+        self.player_best_hand_dict[player.name] = []
         """ Don't need to check the last card since it would be included in one of the potential pairs """
-        for i in range(card_list_len - 1):
+        for i in range(card_list_len - 2, -1, -1):
             if self.handContainsNumRank(card_list, card_list[i].rank) >= 2:
                 """ Found first pair. Save rank and search for another """
                 pair_one_rank = card_list[i].rank
-                for j in range(card_list_len - 1):
+                for j in range(card_list_len - 2, -1, -1):
                     if self.handContainsNumRank(card_list, card_list[j].rank) >= 2 and card_list[j].rank != card_list[i].rank:
                         """ Found second unique pair. Build the hand """
                         pair_two_rank = card_list[j].rank
                         """ Add the two pairs for the first four cards """
                         for k in range(card_list_len):
-                            if card_list[k].rank == pair_one_rank or card_list[k].rank == pair_two_rank:
-                                self.player_best_hand_dict[player.name].append(Card(card_list[k].suit, card_list[k].rank))
+                            if card_list[k].rank == pair_one_rank:
+                                """ Add this card of one of the pairs either in front or behind """
+                                if pair_one_rank > pair_two_rank:
+                                    self.player_best_hand_dict[player.name].append(Card(card_list[k].suit, card_list[k].rank))
+                                else:
+                                    self.player_best_hand_dict[player.name].insert(0, Card(card_list[k].suit, card_list[k].rank))
+                            if card_list[k].rank == pair_two_rank:
+                                """ Add this card of one of the pairs either in front or behind """
+                                if pair_two_rank > pair_one_rank:
+                                    self.player_best_hand_dict[player.name].append(Card(card_list[k].suit, card_list[k].rank))
+                                else:
+                                    self.player_best_hand_dict[player.name].insert(0, Card(card_list[k].suit, card_list[k].rank))
                         """ Get the remaining highest ranking card for the kicker """
                         for k in range(card_list_len-1, -1, -1):
                             if card_list[k].rank != pair_one_rank and card_list[k].rank != pair_two_rank:
-                                self.player_best_hand_dict[player.name].append(Card(card_list[k].suit, card_list[k].rank))
+                                self.player_best_hand_dict[player.name].insert(0, Card(card_list[k].suit, card_list[k].rank))
                                 return HandRanking.RANK_TWO_PAIR
 
         """ Check RANK_PAIR """
+        card_list.sort()
+        self.player_best_hand_dict[player.name] = []
         """ Don't need to check that last card since it would be included in the potential pair """
-        for i in range(card_list_len - 1):
+        for i in range(card_list_len - 2, -1, -1):
             if self.handContainsNumRank(card_list, card_list[i].rank) >= 2:
                 """ Found a pair. Build the hand """
+                self.player_best_hand_dict[player.name] = []
                 for j in range(card_list_len):
                     if card_list[j].rank == card_list[i].rank:
                         """ Fill the pair """
-                        self.player_best_hand_dict[player.name].append(Card(card_list[i].suit, card_list[i].rank))
                         self.player_best_hand_dict[player.name].append(Card(card_list[j].suit, card_list[j].rank))
-                        """ Fill in the remaining highest cards """
-                        num_added = 0
-                        for k in range(card_list_len-1, -1, -1):
-                            if card_list[k].rank != card_list[i].rank:
-                                self.player_best_hand_dict[player.name].append(Card(card_list[k].suit, card_list[k].rank))
-                                num_added += 1
-                            if num_added >= 3:
-                                return HandRanking.RANK_PAIR
+                """ Fill in the remaining highest cards """
+                num_added = 0
+                for j in range(card_list_len-1, -1, -1):
+                    if card_list[j].rank != card_list[i].rank:
+                        self.player_best_hand_dict[player.name].insert(0, Card(card_list[j].suit, card_list[j].rank))
+                        num_added += 1
+                    if num_added >= 3:
+                        return HandRanking.RANK_PAIR
 
         """ Check RANK_HIGH_CARD """
         card_list.sort()
-        self.player_best_hand_dict[player.name] = card_list[card_list_len - 5:]
+        self.player_best_hand_dict[player.name] = []
+        for i in range(card_list_len - 5, card_list_len):
+            self.player_best_hand_dict[player.name].append(Card(card_list[i].suit, card_list[i].rank))
         return 0
 
     def getCardAtRank(self, card_list, rank):

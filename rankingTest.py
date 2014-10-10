@@ -5,7 +5,9 @@ from HandRanking import HandRanking
 from PokerPlayerOpp import PokerPlayerOpp
 
 ppo1 = PokerPlayerOpp("Opponent 1")
-hr1 = HandRanking([], {})
+player_hand_dict = {}
+player_hand_dict[ppo1.name] = []
+hr1 = HandRanking([ppo1], player_hand_dict)
 
 """ Straight flush test """
 card_list_straight_flush = []
@@ -204,4 +206,15 @@ card_list_extra_2.append(Card(1, 12))
 card_list_extra_2.append(Card(0, 2))
 card_list_extra_2.append(Card(1, 2))
 assert hr1.getRank(ppo1, card_list_extra_2) == hr1.RANK_THREE_OF_A_KIND
+
+""" Extra test 3 """
+card_list_extra_3 = []
+card_list_extra_3.append(Card(1, 10))
+card_list_extra_3.append(Card(2, 14))
+card_list_extra_3.append(Card(1, 9))
+card_list_extra_3.append(Card(0, 8))
+card_list_extra_3.append(Card(2, 7))
+card_list_extra_3.append(Card(1, 7))
+card_list_extra_3.append(Card(0, 7))
+assert hr1.getRank(ppo1, card_list_extra_3) == hr1.RANK_THREE_OF_A_KIND
 

@@ -6,6 +6,8 @@ from Card import Card
 SMALL_BLIND_AMOUNT = 100
 BIG_BLIND_AMOUNT   = 200
 
+random.seed ( 2 )
+
 class PokerGameController(object):
     """
     " Manages the game.  This class holds the current game state,
@@ -73,8 +75,12 @@ class PokerGameController(object):
     def playHand(self):
         self.printGameState(self.game_state_list[-1])
         """ Set blind bets """
-        if self.player_chips[self.player_list[(self.dealer+1)%self.num_players].name] >= SMALL_BLIND_AMOUNT:
+        if self.player_chips[self.player_list[(self.dealer+1)%self.num_players].name] >= BIG_BLIND_AMOUNT:
             betting_player = self.player_list[(self.dealer+1)%self.num_players]
+            small_blind_decision = PokerDecision(betting_player, PokerDecision.ACTION_TYPE_RAISE, BIG_BLIND_AMOUNT)
+            self.handleBet(betting_player, small_blind_decision, self.game_state_list[-1])
+        if self.num_players > 2 and self.player_chips[self.player_list[(self.dealer+2)%self.num_players].name] >= SMALL_BLIND_AMOUNT:
+            betting_player = self.player_list[(self.dealer+2)%self.num_players]
             small_blind_decision = PokerDecision(betting_player, PokerDecision.ACTION_TYPE_RAISE, SMALL_BLIND_AMOUNT)
             self.handleBet(betting_player, small_blind_decision, self.game_state_list[-1])
 
@@ -218,18 +224,62 @@ class PokerGameController(object):
                 self.player_hand_dict[player.name].append(Card(card.suit, card.rank))
         hand_ranking = HandRanking(self.player_list, self.player_hand_dict)
         hand_ranking.rankHands()
-        high_rank = -1
-        """ Need a better initial value - this won't map in the dict """
-        winner = "None"
+        winning_rank = -1
+        winner = None
+        tie_list = []
+        """ Get winning rank """
         for player in self.player_list:
-            if hand_ranking.player_ranks_dict[player.name] > high_rank:
-                winner = player.name
-                high_rank = hand_ranking.player_ranks_dict[player.name]
+            if hand_ranking.player_ranks_dict[player.name] > winning_rank:
+                winning_rank = hand_ranking.player_ranks_dict[player.name]
+                winner = player    
+                tie_list = []
+                tie_list.append(player)
+            elif hand_ranking.player_ranks_dict[player.name] == winning_rank:
+                tie_list.append(player)
+        """ winner should never be equal to None """
 
-        print winner + " wins with",
-        hand_ranking.printRanking(high_rank)
-        print "and takes " + str(self.game_state_list[-1].pot) + " chips!"
-        self.player_chips[winner] += self.game_state_list[-1].pot
+        """ Check for tie and resolve if needed """
+        if len(tie_list) > 1:
+            print "found potential tie..."
+            for player in tie_list:
+                print player.name + "'s hand:"
+                for card in hand_ranking.player_best_hand_dict[player.name]:
+                    print card
+            print "resolving tie..."
+            result_tie_list = self.resolveTie(hand_ranking, tie_list)
+            for player in result_tie_list:
+                print player.name + ",",
+            print " wins with",
+            hand_ranking.printRanking(winning_rank)
+            print "and takes " + str(self.game_state_list[-1].pot / len(tie_list)) + " chips!"
+            for player in result_tie_list:
+                self.player_chips[player.name] += self.game_state_list[-1].pot / len(tie_list)
+        else:
+            print winner.name + " wins with",
+            hand_ranking.printRanking(winning_rank)
+            print "and takes " + str(self.game_state_list[-1].pot) + " chips!"
+            self.player_chips[winner.name] += self.game_state_list[-1].pot
+
+    """ TODO """
+    def resolveTie(self, hand_ranking, tie_list):
+        """ Get max at each index """
+        max_rank_list = [] 
+
+        for i in range(5):
+            """ Lowest rank card as baseline """
+            curr_max_rank = 0 
+            for player in tie_list:
+                if hand_ranking.player_best_hand_dict[player.name][i].rank > curr_max_rank:
+                    curr_max_rank = hand_ranking.player_best_hand_dict[player.name][i].rank
+            max_rank_list.append(curr_max_rank)
+
+        """ Compare player hands to max_rank_list """
+        """ Start with final card and loop towards lowest rank """
+        for i in range(5-1, -1, -1):
+            for player in tie_list:
+                if hand_ranking.player_best_hand_dict[player.name][i].rank < max_rank_list[i] and len(tie_list) > 1:
+                    tie_list.remove(player)
+        return tie_list
 
 
 class PokerGameState(object):
@@ -254,6 +304,7 @@ class PokerGameState(object):
             self.chips_bet_dict[player.name] = 0
         self.chips_to_stay = 0
         self.board = []
+        self.num_raises = 0
 
 
 class PokerDecision(object):
