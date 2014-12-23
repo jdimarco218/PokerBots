@@ -3,18 +3,20 @@
 #from PokerPlayer import PokerPlayer
 from PokerPlayerJeff import *
 from PokerPlayerOpp import *
+from PokerPlayerAllInBot import *
 from PokerGame import *
 
-#ppj = PokerPlayerJeff("Jeff")
-ppo1 = PokerPlayerOpp("Opponent 1")
-ppo2 = PokerPlayerOpp("Opponent 2")
+pgc = PokerGameController( 1, 600)
+ppo1 = PokerPlayerOpp("Opponent 1", pgc)
+ppo2 = PokerPlayerOpp("Opponent 2", pgc)
+ppo3 = PokerPlayerAllInBot("All In Bot", pgc)
+
 
 input_player_list = []
-#input_player_list.append(ppj)
 input_player_list.append(ppo1)
 input_player_list.append(ppo2)
+input_player_list.append(ppo3)
 print input_player_list
 
-pgc = PokerGameController(input_player_list, 1, 400)
-pgc.initGame()
+pgc.initGame(input_player_list)
 pgc.runGame()

@@ -6,6 +6,8 @@ from Card import Card
 SMALL_BLIND_AMOUNT = 100
 BIG_BLIND_AMOUNT   = 200
 
+DEBUG = True
+
 random.seed ( 2 )
 
 class PokerGameController(object):
@@ -25,35 +27,28 @@ class PokerGameController(object):
 
     board_states = ["Pre-flop", "Flop", "Turn", "River"]
 
-    def __init__(self, player_list, num_decks, starting_chips):
-        self.player_list = player_list
-        self.num_players = len(player_list)
+    def __init__(self, num_decks, starting_chips):
         self.num_decks = num_decks
         self.starting_chips = starting_chips
         self.cards_per_hand = 2
-        self.game_state_list = []
-        self.player_order = []
         self.player_chips = {}
+        self.decision_list = []
         self.player_hand_dict = {} 
         self.board_state = 0
 
-    def initGame(self):
+    def initGame(self, player_list):
         """ Set a random ordering for players and initial Dealer """
-        self.setPlayerOrder()
-        self.game_state_list.append(PokerGameState(self.player_list, self.num_decks))
         self.dealer = 0
         self.board_state = 0
+        self.player_list = player_list
+        self.num_players = len(player_list)
+        self.game_state = PokerGameState(self.player_list, self.num_decks, self.starting_chips) 
 
-        """ Set the starting chips for all players """
-        for player in self.player_order:
-            self.player_chips[player.name] = self.starting_chips
-        for player in self.player_order:
-            print str(self.player_chips[player.name])
 
     """ TODO: handle running out of cards in the deck """
     def runGame(self):
         """ Init player hands to empty lists """
-        for player in self.player_order:
+        for player in self.game_state.player_order:
             self.player_hand_dict[player.name] = []
 
         """ Deal the hand out starting with the player after the Dealer """
@@ -66,39 +61,40 @@ class PokerGameController(object):
         if self.isGameFinished() == False:
             """ Increment dealer """
             self.dealer = (self.dealer+1)%self.num_players
-            """ Push a new game state to the list """
-            self.game_state_list.append(PokerGameState(self.player_list, self.num_decks))
+            """ Reset the game state """
+            self.game_state.newGameState()
             self.runGame()
         else:
             print "Game over!"
 
     def playHand(self):
-        self.printGameState(self.game_state_list[-1])
+        self.printGameState(self.game_state)
+        """ Set positions  """ 
         """ Set blind bets """
-        if self.player_chips[self.player_list[(self.dealer+1)%self.num_players].name] >= BIG_BLIND_AMOUNT:
+        if self.game_state.player_chips[self.player_list[(self.dealer+1)%self.num_players].name] >= BIG_BLIND_AMOUNT:
             betting_player = self.player_list[(self.dealer+1)%self.num_players]
             small_blind_decision = PokerDecision(betting_player, PokerDecision.ACTION_TYPE_RAISE, BIG_BLIND_AMOUNT)
-            self.handleBet(betting_player, small_blind_decision, self.game_state_list[-1])
+            self.handleBet(betting_player, small_blind_decision, self.game_state)
         if self.num_players > 2 and self.player_chips[self.player_list[(self.dealer+2)%self.num_players].name] >= SMALL_BLIND_AMOUNT:
             betting_player = self.player_list[(self.dealer+2)%self.num_players]
             small_blind_decision = PokerDecision(betting_player, PokerDecision.ACTION_TYPE_RAISE, SMALL_BLIND_AMOUNT)
-            self.handleBet(betting_player, small_blind_decision, self.game_state_list[-1])
+            self.handleBet(betting_player, small_blind_decision, self.game_state)
 
         self.board_state = 0
         """ Place bets for each round of cards on the board """
         while PokerGameController.board_states[self.board_state] != "River":
-            self.printGameState(self.game_state_list[-1])
+            self.printGameState(self.game_state)
             self.placeBets()
             self.dealBoardCards()
             self.board_state = self.board_state + 1
         """ Play final round of the hand """
-        self.printGameState(self.game_state_list[-1])
+        self.printGameState(self.game_state)
         self.placeBets()
         self.determineWinner()
         return
 
     def handleBet(self, player, poker_decision, poker_game_state):
-        if self.player_chips[player.name] >= poker_decision.amount:
+        if self.game_state.player_chips[player.name] >= poker_decision.amount:
             if poker_game_state.chips_to_stay > poker_game_state.chips_bet_dict[player.name] + poker_decision.amount:
                 """ Case: player didn't bet enough """
                 print "Didn't bet enough!"
@@ -106,21 +102,21 @@ class PokerGameController(object):
             elif poker_decision.action_type == PokerDecision.ACTION_TYPE_RAISE:
                 """ Case: player raised """
                 print player.name + " raising " + str(poker_decision.amount) + "..."
-                self.player_chips[player.name] -= poker_decision.amount 
+                self.game_state.player_chips[player.name] -= poker_decision.amount 
                 poker_game_state.chips_bet_dict[player.name] += poker_decision.amount
                 poker_game_state.chips_to_stay = poker_game_state.chips_bet_dict[player.name] 
                 poker_game_state.pot += poker_decision.amount
             elif poker_decision.action_type == PokerDecision.ACTION_TYPE_CALL:
                 """ Case: player called """
                 print player.name + " calling " + str(poker_decision.amount) + "..."
-                self.player_chips[player.name] -= poker_decision.amount 
+                self.game_state.player_chips[player.name] -= poker_decision.amount 
                 poker_game_state.chips_bet_dict[player.name] += poker_decision.amount
                 poker_game_state.chips_to_stay = poker_game_state.chips_bet_dict[player.name] 
                 poker_game_state.pot += poker_decision.amount
             elif poker_decision.action_type == PokerDecision.ACTION_TYPE_CHECK:
                 pass
         else:
-            print "Player can't bet this much!"
+            print "Player can't bet this much! (" + str(poker_decision.amount) + " vs " + str(self.player_chips[player.name])
             sys.exit
 
     """ TODO """
@@ -128,49 +124,79 @@ class PokerGameController(object):
         if self.board_state == PokerGameController.BOARD_STATE_PRE_FLOP:
             print "Flop..."
             """ Burn a card, then lay 3 """
-            self.game_state_list[-1].deck.popCard()
+            self.game_state.deck.popCard()
             for card_num in range(3):
-                self.game_state_list[-1].board.append(self.game_state_list[-1].deck.popCard())
+                self.game_state.board.append(self.game_state.deck.popCard())
         if self.board_state == PokerGameController.BOARD_STATE_FLOP:
             print "Turn..."
             """ Burn a card, then lay 1 """
-            self.game_state_list[-1].deck.popCard()
-            self.game_state_list[-1].board.append(self.game_state_list[-1].deck.popCard())
+            self.game_state.deck.popCard()
+            self.game_state.board.append(self.game_state.deck.popCard())
         if self.board_state == PokerGameController.BOARD_STATE_TURN:
             print "River..."
             """ Burn a card, then lay 1 """
-            self.game_state_list[-1].deck.popCard()
-            self.game_state_list[-1].board.append(self.game_state_list[-1].deck.popCard())
+            self.game_state.deck.popCard()
+            self.game_state.board.append(self.game_state.deck.popCard())
         if self.board_state == PokerGameController.BOARD_STATE_RIVER:
             """ TODO: handle this properly """
             print "Should never get here"
 
     def placeBets(self):
-        current_final_decision = (self.dealer+1)%self.num_players 
-        poker_decision = self.player_order[current_final_decision].getPokerDecision(self.game_state_list)
-        """ TODO: validate poker_decision """
-        current_turn = (current_final_decision + 1) % self.num_players
-        while current_turn != current_final_decision:
-            poker_decision = self.player_order[current_turn].getPokerDecision(self.game_state_list)
+        """ Determine who goes first """
+        if self.board_state == PokerGameController.BOARD_STATE_PRE_FLOP:
+            if self.num_players == 2:
+                self.game_state.current_turn = self.dealer
+                self.game_state.current_final_decision = self.game_state.current_turn
+            else:
+                """ Player after the big blind """
+                self.game_state.current_turn = (self.dealer+3)%self.num_players 
+                self.game_state.current_final_decision = self.game_state.current_turn
+        else:
+            if self.num_players == 2:
+                self.game_state.current_turn = self.dealer
+                self.game_state.current_final_decision = self.game_state.current_turn
+            else:
+                self.game_state.current_turn = (self.dealer+1)%self.num_players 
+                self.game_state.current_final_decision = self.game_state.current_turn
+        print "current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
+        print "current_turn: " + str(self.game_state.current_turn) + "  " + str(self.game_state.player_order[self.game_state.current_turn].name)
+
+        print "getting initial poker decision from " + str(self.game_state.player_order[self.game_state.current_turn].name) + "..."
+        poker_decision = self.game_state.player_order[self.game_state.current_turn].getPokerDecision(self.game_state, self.decision_list)
+        self.handleDecision(poker_decision)
+        self.game_state.current_turn = (self.game_state.current_turn + 1) % self.num_players
+        print "current_turn: " + str(self.game_state.current_turn) + "  " + str(self.game_state.player_order[self.game_state.current_turn].name)
+        print "current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
+        while int(self.game_state.current_turn) != int(self.game_state.current_final_decision):
+            print "getting poker decision from " + str(self.game_state.player_order[self.game_state.current_turn].name) + "..."
+            poker_decision = self.game_state.player_order[self.game_state.current_turn].getPokerDecision(self.game_state, self.decision_list)
             """ TODO: validate poker_decision """
             """ TODO: update current_last_decision """
-            self.handleDecision(poker_decision, self.game_state_list[-1])
-            current_turn = (current_turn + 1) % self.num_players
+            self.handleDecision(poker_decision)
+            self.game_state.current_turn = (self.game_state.current_turn + 1) % self.num_players
+            print "current_turn: " + str(self.game_state.current_turn) + "  " + str(self.game_state.player_order[self.game_state.current_turn].name)
+            print "current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
+            print "while cond: " + str(int(self.game_state.current_turn) != int(self.game_state.current_final_decision))
 
-    def handleDecision(self, poker_decision, curr_game_state):
+    def handleDecision(self, poker_decision):
         if poker_decision.action_type == PokerDecision.ACTION_TYPE_FOLD:
             """ TODO """
         elif poker_decision.action_type == PokerDecision.ACTION_TYPE_CHECK:
+            print self.game_state.player_list[self.game_state.current_turn].name + " checking..."
             if (poker_decision.amount != 0):
                 print "Player decided to check, but sent amount: " + str(poker_decision.amount) + "!"
                 sys.exit
-            self.handleBet(poker_decision.decider, poker_decision, curr_game_state)
+            self.handleBet(poker_decision.decider, poker_decision, self.game_state)
         elif poker_decision.action_type == PokerDecision.ACTION_TYPE_CALL:
-            self.handleBet(poker_decision.decider, poker_decision, curr_game_state)
+            print self.game_state.player_list[self.game_state.current_turn].name + " calling..."
+            self.handleBet(poker_decision.decider, poker_decision, self.game_state)
         elif poker_decision.action_type == PokerDecision.ACTION_TYPE_RAISE:
-            """ TODO """
+            print self.game_state.player_list[self.game_state.current_turn].name + " raising..."
+            self.handleBet(poker_decision.decider, poker_decision, self.game_state)
+            self.game_state.num_raises += 1
             """ update current_final_decision """
-            pass
+            self.game_state.current_final_decision = self.game_state.current_turn
+            print "current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
         else:
             print """ IDK HOW TO HANDLE """
             sys.exit
@@ -179,39 +205,36 @@ class PokerGameController(object):
     def isGameFinished(self):
         """ Currently only if one player hits zero we terminate! """
         for player in self.player_list:
-            if self.player_chips[player.name] <= 0:
+            if self.game_state.player_chips[player.name] <= 0:
                 return True
         return False
-
-    def setPlayerOrder(self):
-        self.player_order = self.player_list
-        random.shuffle(self.player_order)
 
     def dealCards(self, dealer):
         """ Deals the cards in round robin order, starting with the player after the Dealer """
         for card_num in range(self.cards_per_hand):
-            for player in self.player_order[(dealer+1)%self.num_players:]+self.player_order[:(dealer+1)%self.num_players]:
+            for player in self.game_state.player_order[(dealer+1)%self.num_players:]+self.game_state.player_order[:(dealer+1)%self.num_players]:
                 """ Consider most recent game_state at index -1 and deal one card """
-                self.player_hand_dict[player.name].append(self.game_state_list[-1].deck.popCard())
+                self.player_hand_dict[player.name].append(self.game_state.deck.popCard())
 
     def printPlayersHands(self):
         print ""
-        for player in self.player_order:
+        for player in self.game_state.player_order:
             print "Player " + player.name + "'s hand:"
-            for i in range(len(self.player_hand_dict)):
+            for i in range(len(self.player_hand_dict[player.name])):
                 print self.player_hand_dict[player.name][i]
             print ""
 
     def printGameState(self, game_state):
         print ""
         print "#####  Current Game State #####"
+        print "Dealer: " + str(game_state.player_order[self.dealer].name)
         print "Pot: " + str(game_state.pot) + "   ",
         print "Chips to stay: " + str(game_state.chips_to_stay)
         for player in self.player_list:
             print "bet[" + player.name + "]: ",
             print game_state.chips_bet_dict[player.name],
             print "   chips[" + player.name + "]: ",
-            print self.player_chips[player.name]
+            print game_state.player_chips[player.name]
         print "Board: ",
         for card in game_state.board:
             print str(card) + " ",
@@ -220,7 +243,7 @@ class PokerGameController(object):
     """ TODO """
     def determineWinner(self):
         for player in self.player_list:
-            for card in self.game_state_list[-1].board:
+            for card in self.game_state.board:
                 self.player_hand_dict[player.name].append(Card(card.suit, card.rank))
         hand_ranking = HandRanking(self.player_list, self.player_hand_dict)
         hand_ranking.rankHands()
@@ -251,14 +274,14 @@ class PokerGameController(object):
                 print player.name + ",",
             print " wins with",
             hand_ranking.printRanking(winning_rank)
-            print "and takes " + str(self.game_state_list[-1].pot / len(tie_list)) + " chips!"
+            print "and takes " + str(self.game_state.pot / len(tie_list)) + " chips!"
             for player in result_tie_list:
-                self.player_chips[player.name] += self.game_state_list[-1].pot / len(tie_list)
+                self.game_state.player_chips[player.name] += self.game_state.pot / len(tie_list)
         else:
             print winner.name + " wins with",
             hand_ranking.printRanking(winning_rank)
-            print "and takes " + str(self.game_state_list[-1].pot) + " chips!"
-            self.player_chips[winner.name] += self.game_state_list[-1].pot
+            print "and takes " + str(self.game_state.pot) + " chips!"
+            self.game_state.player_chips[winner.name] += self.game_state.pot
 
     """ TODO """
     def resolveTie(self, hand_ranking, tie_list):
@@ -287,6 +310,7 @@ class PokerGameState(object):
     " Represents the current state of the game.
     "
     " Attributes:
+    "     TODO: update rest
     "     deck: cards left - shuffled initially
     "     pot: number of chips in play
     "     chips_bet_dict: dict of chips bet by each player so far 
@@ -295,9 +319,18 @@ class PokerGameState(object):
     "
     """
 
-    def __init__(self, player_list, num_decks):
+    def __init__(self, player_list, num_decks, starting_chips):
+        self.num_decks = num_decks
         self.deck = Deck(num_decks)
         random.shuffle(self.deck.cards)
+        self.player_list = player_list
+        self.player_chips = {} 
+        self.setPlayerOrder()
+        """ Set the starting chips for all players """
+        for player in self.player_order:
+            self.player_chips[player.name] = starting_chips
+        for player in self.player_order:
+            print str(self.player_chips[player.name])
         self.pot = 0
         self.chips_bet_dict = {}
         for player in player_list:
@@ -305,6 +338,24 @@ class PokerGameState(object):
         self.chips_to_stay = 0
         self.board = []
         self.num_raises = 0
+        self.current_final_decision = 0
+        self.current_turn = 0
+
+    def newGameState(self):
+        self.deck = Deck(self.num_decks)
+        random.shuffle(self.deck.cards)
+        self.pot = 0
+        for player in self.player_list:
+            self.chips_bet_dict[player.name] = 0
+        self.chips_to_stay = 0
+        self.board = []
+        self.num_raises = 0
+        self.current_final_decision = 0
+
+
+    def setPlayerOrder(self):
+        self.player_order = self.player_list
+        random.shuffle(self.player_order)
 
 
 class PokerDecision(object):
