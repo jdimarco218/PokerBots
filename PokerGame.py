@@ -6,7 +6,8 @@ from Card import Card
 SMALL_BLIND_AMOUNT = 100
 BIG_BLIND_AMOUNT   = 200
 
-DEBUG = True
+#DEBUG = True
+DEBUG = False
 
 random.seed ( 2 )
 
@@ -65,19 +66,21 @@ class PokerGameController(object):
             self.game_state.newGameState()
             self.runGame()
         else:
+            print ""
             print "Game over!"
 
     def playHand(self):
         self.printGameState(self.game_state)
         """ Set positions  """ 
         """ Set blind bets """
+        if self.num_players > 2 and self.game_state.player_chips[self.player_list[(self.dealer+2)%self.num_players].name] >= SMALL_BLIND_AMOUNT:
+            betting_player = self.player_list[(self.dealer+2)%self.num_players]
+            small_blind_decision = PokerDecision(betting_player, PokerDecision.ACTION_TYPE_RAISE, SMALL_BLIND_AMOUNT)
+            self.handleBet(betting_player, small_blind_decision, self.game_state)
+        """ Big blind needs to be issued after the small blind since chips_to_stay would be too large otherwise """
         if self.game_state.player_chips[self.player_list[(self.dealer+1)%self.num_players].name] >= BIG_BLIND_AMOUNT:
             betting_player = self.player_list[(self.dealer+1)%self.num_players]
             small_blind_decision = PokerDecision(betting_player, PokerDecision.ACTION_TYPE_RAISE, BIG_BLIND_AMOUNT)
-            self.handleBet(betting_player, small_blind_decision, self.game_state)
-        if self.num_players > 2 and self.player_chips[self.player_list[(self.dealer+2)%self.num_players].name] >= SMALL_BLIND_AMOUNT:
-            betting_player = self.player_list[(self.dealer+2)%self.num_players]
-            small_blind_decision = PokerDecision(betting_player, PokerDecision.ACTION_TYPE_RAISE, SMALL_BLIND_AMOUNT)
             self.handleBet(betting_player, small_blind_decision, self.game_state)
 
         self.board_state = 0
@@ -97,18 +100,17 @@ class PokerGameController(object):
         if self.game_state.player_chips[player.name] >= poker_decision.amount:
             if poker_game_state.chips_to_stay > poker_game_state.chips_bet_dict[player.name] + poker_decision.amount:
                 """ Case: player didn't bet enough """
-                print "Didn't bet enough!"
+                print "Error: Player didn't bet enough!" 
+                print "chips_to_stay: " + str(poker_game_state.chips_to_stay) + "  vs bet: " + str(poker_game_state.chips_bet_dict[player.name] + poker_decision.amount)
                 sys.exit
             elif poker_decision.action_type == PokerDecision.ACTION_TYPE_RAISE:
                 """ Case: player raised """
-                print player.name + " raising " + str(poker_decision.amount) + "..."
                 self.game_state.player_chips[player.name] -= poker_decision.amount 
                 poker_game_state.chips_bet_dict[player.name] += poker_decision.amount
                 poker_game_state.chips_to_stay = poker_game_state.chips_bet_dict[player.name] 
                 poker_game_state.pot += poker_decision.amount
             elif poker_decision.action_type == PokerDecision.ACTION_TYPE_CALL:
                 """ Case: player called """
-                print player.name + " calling " + str(poker_decision.amount) + "..."
                 self.game_state.player_chips[player.name] -= poker_decision.amount 
                 poker_game_state.chips_bet_dict[player.name] += poker_decision.amount
                 poker_game_state.chips_to_stay = poker_game_state.chips_bet_dict[player.name] 
@@ -116,12 +118,13 @@ class PokerGameController(object):
             elif poker_decision.action_type == PokerDecision.ACTION_TYPE_CHECK:
                 pass
         else:
-            print "Player can't bet this much! (" + str(poker_decision.amount) + " vs " + str(self.player_chips[player.name])
+            print "Error: Player can't bet this much! (" + str(poker_decision.amount) + " vs " + str(self.player_chips[player.name])
             sys.exit
 
     """ TODO """
     def dealBoardCards(self):
         if self.board_state == PokerGameController.BOARD_STATE_PRE_FLOP:
+            print ""
             print "Flop..."
             """ Burn a card, then lay 3 """
             self.game_state.deck.popCard()
@@ -139,7 +142,8 @@ class PokerGameController(object):
             self.game_state.board.append(self.game_state.deck.popCard())
         if self.board_state == PokerGameController.BOARD_STATE_RIVER:
             """ TODO: handle this properly """
-            print "Should never get here"
+            print "Error: Cannot deal cards during river state! Should never get here"
+            sys.exit
 
     def placeBets(self):
         """ Determine who goes first """
@@ -158,47 +162,54 @@ class PokerGameController(object):
             else:
                 self.game_state.current_turn = (self.dealer+1)%self.num_players 
                 self.game_state.current_final_decision = self.game_state.current_turn
-        print "current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
-        print "current_turn: " + str(self.game_state.current_turn) + "  " + str(self.game_state.player_order[self.game_state.current_turn].name)
+        if DEBUG:
+            print "current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
+            print "current_turn: " + str(self.game_state.current_turn) + "  " + str(self.game_state.player_order[self.game_state.current_turn].name)
 
-        print "getting initial poker decision from " + str(self.game_state.player_order[self.game_state.current_turn].name) + "..."
+        """ Run an initial decision so that current_turn doesn't equal current_final_decision """
+        if DEBUG:
+            print "Getting initial poker decision from " + str(self.game_state.player_order[self.game_state.current_turn].name) + "..."
         poker_decision = self.game_state.player_order[self.game_state.current_turn].getPokerDecision(self.game_state, self.decision_list)
         self.handleDecision(poker_decision)
         self.game_state.current_turn = (self.game_state.current_turn + 1) % self.num_players
-        print "current_turn: " + str(self.game_state.current_turn) + "  " + str(self.game_state.player_order[self.game_state.current_turn].name)
-        print "current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
+        if DEBUG:
+            print "current_turn: " + str(self.game_state.current_turn) + "  " + str(self.game_state.player_order[self.game_state.current_turn].name)
+            print "current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
+
         while int(self.game_state.current_turn) != int(self.game_state.current_final_decision):
-            print "getting poker decision from " + str(self.game_state.player_order[self.game_state.current_turn].name) + "..."
+            if DEBUG:
+                print "Getting poker decision from " + str(self.game_state.player_order[self.game_state.current_turn].name) + "..."
             poker_decision = self.game_state.player_order[self.game_state.current_turn].getPokerDecision(self.game_state, self.decision_list)
             """ TODO: validate poker_decision """
             """ TODO: update current_last_decision """
             self.handleDecision(poker_decision)
             self.game_state.current_turn = (self.game_state.current_turn + 1) % self.num_players
-            print "current_turn: " + str(self.game_state.current_turn) + "  " + str(self.game_state.player_order[self.game_state.current_turn].name)
-            print "current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
-            print "while cond: " + str(int(self.game_state.current_turn) != int(self.game_state.current_final_decision))
+            if DEBUG:
+                print "Next current_turn: " + str(self.game_state.current_turn) + "  " + str(self.game_state.player_order[self.game_state.current_turn].name)
+                print "Next current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
+                print "while() cond: " + str(int(self.game_state.current_turn) != int(self.game_state.current_final_decision))
 
     def handleDecision(self, poker_decision):
         if poker_decision.action_type == PokerDecision.ACTION_TYPE_FOLD:
             """ TODO """
         elif poker_decision.action_type == PokerDecision.ACTION_TYPE_CHECK:
-            print self.game_state.player_list[self.game_state.current_turn].name + " checking..."
+            print self.game_state.player_list[self.game_state.current_turn].name + " checking "
             if (poker_decision.amount != 0):
-                print "Player decided to check, but sent amount: " + str(poker_decision.amount) + "!"
+                print "Error: Player decided to check, but sent amount: " + str(poker_decision.amount) + "!"
                 sys.exit
             self.handleBet(poker_decision.decider, poker_decision, self.game_state)
         elif poker_decision.action_type == PokerDecision.ACTION_TYPE_CALL:
-            print self.game_state.player_list[self.game_state.current_turn].name + " calling..."
+            print self.game_state.player_list[self.game_state.current_turn].name + " calling " + str(poker_decision.amount)
             self.handleBet(poker_decision.decider, poker_decision, self.game_state)
         elif poker_decision.action_type == PokerDecision.ACTION_TYPE_RAISE:
-            print self.game_state.player_list[self.game_state.current_turn].name + " raising..."
+            print self.game_state.player_list[self.game_state.current_turn].name + " raising " + str(poker_decision.amount)
             self.handleBet(poker_decision.decider, poker_decision, self.game_state)
             self.game_state.num_raises += 1
             """ update current_final_decision """
             self.game_state.current_final_decision = self.game_state.current_turn
             print "current_final_decision: " + str(self.game_state.current_final_decision) + "  " + str(self.game_state.player_order[self.game_state.current_final_decision].name)
         else:
-            print """ IDK HOW TO HANDLE """
+            print "Error: Unknown decision type."
             sys.exit
 
     """ TODO """
@@ -263,13 +274,16 @@ class PokerGameController(object):
 
         """ Check for tie and resolve if needed """
         if len(tie_list) > 1:
-            print "found potential tie..."
-            for player in tie_list:
-                print player.name + "'s hand:"
-                for card in hand_ranking.player_best_hand_dict[player.name]:
-                    print card
-            print "resolving tie..."
+            if DEBUG:
+                print "found potential tie..."
+                for player in tie_list:
+                    print player.name + "'s hand:"
+                    for card in hand_ranking.player_best_hand_dict[player.name]:
+                        print card
+                print "resolving tie..."
             result_tie_list = self.resolveTie(hand_ranking, tie_list)
+            print ""
+            self.printPlayersHands()
             for player in result_tie_list:
                 print player.name + ",",
             print " wins with",
@@ -278,6 +292,8 @@ class PokerGameController(object):
             for player in result_tie_list:
                 self.game_state.player_chips[player.name] += self.game_state.pot / len(tie_list)
         else:
+            print ""
+            self.printPlayersHands()
             print winner.name + " wins with",
             hand_ranking.printRanking(winning_rank)
             print "and takes " + str(self.game_state.pot) + " chips!"

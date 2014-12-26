@@ -4,7 +4,7 @@ from PokerGame import Card
 from HandRanking import HandRanking
 from PokerPlayerOpp import PokerPlayerOpp
 
-ppo1 = PokerPlayerOpp("Opponent 1")
+ppo1 = PokerPlayerOpp("Opponent 1", 0)
 player_hand_dict = {}
 player_hand_dict[ppo1.name] = []
 hr1 = HandRanking([ppo1], player_hand_dict)
@@ -218,3 +218,4 @@ card_list_extra_3.append(Card(1, 7))
 card_list_extra_3.append(Card(0, 7))
 assert hr1.getRank(ppo1, card_list_extra_3) == hr1.RANK_THREE_OF_A_KIND
 
+print "Successeful!"
