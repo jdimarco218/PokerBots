@@ -1,5 +1,0 @@
-basic controller functionality is there, next is intelligent players and an
-API for them to use
-
-
-players need to know what their cards are!
