@@ -1,3 +1,10 @@
+##
+# Jeff's poker bot. Behold the best poker strategy ever!
+# December 2014
+##
+
+import os
+
 from PokerPlayer import PokerPlayer
 from HeadsUp   import PokerGameState
 from HeadsUp   import PokerDecision
@@ -12,20 +19,20 @@ class PokerPlayerJeff(PokerPlayer):
   
     def __init__(self, name, pgc):
         super(PokerPlayerJeff, self).__init__(name, pgc)
-        self.PRINT_TO_FILE = True
-        self.myFile = open('/tmp/tempPokerPlayerJeff.txt', 'w+')
+        if os.path.isfile('./results/Jeff.txt'):
+            os.remove('./results/Jeff.txt')
         self.myHandDict = {}
         self.myHandDict[self.name] = [] 
         self.myHandRanking = HandRanking([self], self.myHandDict)
 
     def getPokerDecision(self, game_state, decision_list):
+        file1 = open('results/Jeff.txt', 'a+')
         print self.name + " making decision..."
         if DEBUG: 
-            print >> self.myFile, "Sees chips_to_stay: " + str(game_state.chips_to_stay)
-            print >> self.myFile, "I've bet          : " + str(game_state.chips_bet_dict[self.name])
-            print >> self.myFile, "I have            : " + str(game_state.player_chips[self.name])
-            #for decision in decision_list:
-            #    print decision
+            file1.write("Sees chips_to_stay: " + str(game_state.chips_to_stay) + "\n")
+            file1.write("I've bet          : " + str(game_state.chips_bet_dict[self.name]) + "\n")
+            file1.write("I have            : " + str(game_state.player_chips[self.name]) + "\n")
+            file1.write("\n")
 
         isPair = self.hand[0].rank == self.hand[1].rank
         if game_state.chips_to_stay > game_state.chips_bet_dict[self.name] + game_state.player_chips[self.name]:
@@ -52,7 +59,7 @@ class PokerPlayerJeff(PokerPlayer):
                 for card in game_state.board:
                     tempCardList.append(Card(card.suit, card.rank))
                 tempRanking = self.myHandRanking.getRank(self, tempCardList)
-                if self.PRINT_TO_FILE:
+                if DEBUG:
                     print >> self.myFile, "Ranking: " + str(tempRanking)
                 if tempRanking >= HandRanking.RANK_THREE_OF_A_KIND:
                     if game_state.player_chips[self.name] - game_state.chips_bet_dict[self.name] > 0:
@@ -72,7 +79,7 @@ class PokerPlayerJeff(PokerPlayer):
                 for card in game_state.board:
                     tempCardList.append(Card(card.suit, card.rank))
                 tempRanking = self.myHandRanking.getRank(self, tempCardList)
-                if self.PRINT_TO_FILE:
+                if DEBUG:
                     print >> self.myFile, "Ranking: " + str(tempRanking)
                 if tempRanking >= HandRanking.RANK_THREE_OF_A_KIND:
                     if game_state.player_chips[self.name] - game_state.chips_bet_dict[self.name] > 0:
