@@ -13,6 +13,7 @@ class HandRanking(object):
     RANK_HIGH_CARD = 0
 
     TEXAS_HOLD_EM_COUNT = 7
+    MIN_HAND_COUNT = 5
 
     def __init__(self, player_list, player_hand_dict):
         self.player_list = player_list
@@ -36,7 +37,7 @@ class HandRanking(object):
 
     def getRank(self, player, card_list):
         card_list_len = len(card_list)
-        if card_list_len != HandRanking.TEXAS_HOLD_EM_COUNT:
+        if card_list_len < HandRanking.MIN_HAND_COUNT:
             print "Error: incorrect number of cards when ranking!"
 
         """ Check RANK_STRAIGHT_FLUSH """
