@@ -1,4 +1,6 @@
 #!/usr/bin/python
+import sys
+sys.path.insert(0, 'src')
 
 from PokerPlayerJeff import *
 from PokerPlayerOpp import *

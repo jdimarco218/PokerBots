@@ -1,6 +1,8 @@
-Jeff DiMarco
-October 2014
+Jeff DiMarco - October 2014
 
-This is a controller to take python modules as input "bot" players.
+To "play" heads-up poker against me, fill out PokerPlayerOpp.py and run 
+the script headsUp.py.  A summary is printed to standard output while detailed
+results can be found in the results/ directory.
 
-Run test.py to see an example!
+
+
