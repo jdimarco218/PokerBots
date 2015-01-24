@@ -1,5 +1,8 @@
 ##
 # Template module for Opponent's poker bot. Just fill out getPokerDecision()
+#
+# Use file1 to write debugging information to results/Opponent.txt
+# The game_state is a PokerGameState object from HeadsUp.py
 ##
 
 import os
