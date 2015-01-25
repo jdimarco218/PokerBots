@@ -2,6 +2,7 @@
 
 import os
 import sys
+sys.path.insert(0, 'src')
 
 from PokerPlayerJeff import *
 from PokerPlayerOpp import *
@@ -10,7 +11,6 @@ from HeadsUp import *
 # Setup file and direct prints to results/results.txt
 if os.path.isfile('./results/results.txt'):
     os.remove('./results/results.txt')
-sys.path.insert(0, 'src')
 stdout = sys.stdout
 sys.stdout = open('./results/results.txt', 'w')
 
@@ -26,3 +26,8 @@ pgc.runGame()
 
 # Reset stdout
 sys.stdout = stdout
+if pgc.game_state.player_chips["Jeff"] > pgc.game_state.player_chips["Opponent"]:
+    print "Jeff wins!"
+else:
+    print "Opponent wins!"
+
