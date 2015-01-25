@@ -83,7 +83,9 @@ class PokerPlayerJeff(PokerPlayer):
                     print >> self.myFile, "Ranking: " + str(tempRanking)
                 if tempRanking >= HandRanking.RANK_THREE_OF_A_KIND:
                     if game_state.player_chips[self.name] - game_state.chips_bet_dict[self.name] > 0:
-                        return PokerDecision(self, PokerDecision.ACTION_TYPE_RAISE, game_state.player_chips[self.name])
+                        """ Bet 500 if available """
+                        if game_state.player_chips[self.name] >= 500:
+                            return PokerDecision(self, PokerDecision.ACTION_TYPE_RAISE, 500)
                     else:
                         return PokerDecision(self, PokerDecision.ACTION_TYPE_CHECK, 0)
                 return PokerDecision(self, PokerDecision.ACTION_TYPE_CHECK, 0)
