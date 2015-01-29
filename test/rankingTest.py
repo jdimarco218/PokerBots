@@ -1,4 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
+import os
+import sys
+dirPath = os.path.dirname(os.path.realpath(__file__))
+relativePath = '/../pokerBots'
+print dirPath + relativePath
+sys.path.insert(0, dirPath + '/' + relativePath)
 
 from HeadsUp import Card
 from HandRanking import HandRanking

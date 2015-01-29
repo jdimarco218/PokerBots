@@ -13,15 +13,20 @@ from HeadsUp import PokerDecision
 #DEBUG = False
 DEBUG = True 
 
+# File location for output
+dirPath = os.path.dirname(os.path.realpath(__file__))
+relativeResultsPath = '/../results/Opponent.txt'
+resultsPath = dirPath + relativeResultsPath
+
 class PokerPlayerOpp(PokerPlayer):
   
     def __init__(self, name, pgc):
         super(PokerPlayerOpp, self).__init__(name, pgc)
-        if os.path.isfile('./results/Opponent.txt'):
-            os.remove('./results/Opponent.txt')
+        if os.path.isfile(resultsPath):
+            os.remove(resultsPath)
 
     def getPokerDecision(self, game_state, decision_list):
-        file1 = open('results/Opponent.txt', 'a+')
+        file1 = open(resultsPath, 'a+')
         if DEBUG:
             file1.write("Making decision...\n")
             file1.write("Sees chips_to_stay: " + str(game_state.chips_to_stay) + "\n")

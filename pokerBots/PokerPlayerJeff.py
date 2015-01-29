@@ -14,19 +14,24 @@ from Card        import Card
 DEBUG = False
 #DEBUG = True
 
+# File location for output
+dirPath = os.path.dirname(os.path.realpath(__file__))
+relativeResultsPath = '/../results/Jeff.txt'
+resultsPath = dirPath + relativeResultsPath
+
 class PokerPlayerJeff(PokerPlayer):
 
   
     def __init__(self, name, pgc):
         super(PokerPlayerJeff, self).__init__(name, pgc)
-        if os.path.isfile('./results/Jeff.txt'):
-            os.remove('./results/Jeff.txt')
+        if os.path.isfile(resultsPath):
+            os.remove(resultsPath)
         self.myHandDict = {}
         self.myHandDict[self.name] = [] 
         self.myHandRanking = HandRanking([self], self.myHandDict)
 
     def getPokerDecision(self, game_state, decision_list):
-        file1 = open('results/Jeff.txt', 'a+')
+        file1 = open(resultsPath, 'a+')
         print self.name + " making decision..."
         if DEBUG: 
             file1.write("Sees chips_to_stay: " + str(game_state.chips_to_stay) + "\n")
