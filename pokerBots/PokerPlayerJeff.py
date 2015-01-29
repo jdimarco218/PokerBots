@@ -11,8 +11,8 @@ from HeadsUp   import PokerDecision
 from HandRanking import HandRanking
 from Card        import Card
 
-DEBUG = False
-#DEBUG = True
+#DEBUG = False
+DEBUG = True
 
 # File location for output
 dirPath = os.path.dirname(os.path.realpath(__file__))
@@ -49,12 +49,12 @@ class PokerPlayerJeff(PokerPlayer):
                 sum = self.hand[0].rank + self.hand[1].rank 
                 if sum < 14 and not isPair:
                     if DEBUG:
-                        print >> self.myFile, "Folding pre-flop because low ranks and no pair..."
+                        file1.write("Folding pre-flop because low ranks and no pair...")
                     return PokerDecision(self, PokerDecision.ACTION_TYPE_FOLD, 0)
                 if isPair and game_state.player_chips[self.name] >= 500: 
                     return PokerDecision(self, PokerDecision.ACTION_TYPE_RAISE, 500)
                     if DEBUG:
-                        print >> self.myFile, "Raising pre-flop because pair..."
+                        file1.write("Raising pre-flop because pair...")
                 call_amount =  game_state.chips_to_stay - game_state.chips_bet_dict[self.name]
                 return PokerDecision(self, PokerDecision.ACTION_TYPE_CALL, call_amount)
             elif PokerGameState.board_states[game_state.board_state] == "Flop" or PokerGameState.board_states[game_state.board_state] == "Turn" or PokerGameState.board_states[game_state.board_state] == "River":
@@ -65,7 +65,7 @@ class PokerPlayerJeff(PokerPlayer):
                     tempCardList.append(Card(card.suit, card.rank))
                 tempRanking = self.myHandRanking.getRank(self, tempCardList)
                 if DEBUG:
-                    print >> self.myFile, "Ranking: " + str(tempRanking)
+                    file1.write("Ranking: " + str(tempRanking))
                 if tempRanking >= HandRanking.RANK_THREE_OF_A_KIND:
                     if game_state.player_chips[self.name] - game_state.chips_bet_dict[self.name] > 0:
                         return PokerDecision(self, PokerDecision.ACTION_TYPE_RAISE, game_state.player_chips[self.name])
@@ -85,7 +85,7 @@ class PokerPlayerJeff(PokerPlayer):
                     tempCardList.append(Card(card.suit, card.rank))
                 tempRanking = self.myHandRanking.getRank(self, tempCardList)
                 if DEBUG:
-                    print >> self.myFile, "Ranking: " + str(tempRanking)
+                    file1.write("Ranking: " + str(tempRanking))
                 if tempRanking >= HandRanking.RANK_THREE_OF_A_KIND:
                     if game_state.player_chips[self.name] - game_state.chips_bet_dict[self.name] > 0:
                         """ Bet 500 if available """
