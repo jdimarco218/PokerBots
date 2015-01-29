@@ -1,18 +1,21 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import os
 import sys
-sys.path.insert(0, 'src')
+dirPath = os.path.dirname(os.path.realpath(__file__))
+relativePath = '/../pokerBots'
+print dirPath + relativePath
+sys.path.insert(0, dirPath + '/' + relativePath)
 
 from PokerPlayerJeff import *
 from PokerPlayerOpp import *
 from HeadsUp import *
 
 # Setup file and direct prints to results/results.txt
-if os.path.isfile('./results/results.txt'):
-    os.remove('./results/results.txt')
+if os.path.isfile(dirPath + '/../results/results.txt'):
+    os.remove(dirPath + '/../results/results.txt')
 stdout = sys.stdout
-sys.stdout = open('./results/results.txt', 'w')
+sys.stdout = open(dirPath + '/../results/results.txt', 'w')
 
 
 # Create players and controlle
