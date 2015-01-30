@@ -24,6 +24,12 @@ class PokerPlayerOpp(PokerPlayer):
         super(PokerPlayerOpp, self).__init__(name, pgc)
         if os.path.isfile(resultsPath):
             os.remove(resultsPath)
+        ## 
+        # HandRanking object can be used to check the ranking of the hand
+        # Use myHandRanking.getRank(self, card_list) where card_list is a list
+        # of at least 5 Card objects
+        ##
+        self.myHandRanking = HandRanking([self], {})
 
     def getPokerDecision(self, game_state, decision_list):
         file1 = open(resultsPath, 'a+')
