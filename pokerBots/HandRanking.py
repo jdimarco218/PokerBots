@@ -22,8 +22,9 @@ class HandRanking(object):
         for player in self.player_list:
             self.player_ranks_dict[player.name] = 0
         self.player_best_hand_dict = {}
-        for player in self.player_list:
-            self.player_hand_dict[player.name] = player_hand_dict[player.name]
+        if player_hand_dict:
+            for player in self.player_list:
+                self.player_hand_dict[player.name] = player_hand_dict[player.name]
         for player in self.player_list:
             self.player_best_hand_dict[player.name] = []
 

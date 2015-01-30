@@ -26,9 +26,10 @@ class PokerPlayerJeff(PokerPlayer):
         super(PokerPlayerJeff, self).__init__(name, pgc)
         if os.path.isfile(resultsPath):
             os.remove(resultsPath)
-        self.myHandDict = {}
-        self.myHandDict[self.name] = [] 
-        self.myHandRanking = HandRanking([self], self.myHandDict)
+        #self.myHandDict = {}
+        #self.myHandDict[self.name] = [] 
+        #self.myHandRanking = HandRanking([self], self.myHandDict)
+        self.myHandRanking = HandRanking([self], {})
 
     def getPokerDecision(self, game_state, decision_list):
         file1 = open(resultsPath, 'a+')
@@ -40,6 +41,8 @@ class PokerPlayerJeff(PokerPlayer):
             file1.write("\n")
 
         isPair = self.hand[0].rank == self.hand[1].rank
+        isSuited = self.hand[0].suit == self.hand[1].suit
+        isConnected = (abs(self.hand[0].rank - self.hand[1].rank) == 1)
         if game_state.chips_to_stay > game_state.chips_bet_dict[self.name] + game_state.player_chips[self.name]:
             """ Need to fold, cannot play """
             return PokerDecision(self, PokerDecision.ACTION_TYPE_FOLD, 0)

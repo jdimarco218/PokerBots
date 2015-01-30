@@ -3,6 +3,7 @@ import random
 from HandRanking import HandRanking 
 from Card import Card
 
+CARDS_PER_PLAYER   = 2
 SMALL_BLIND_AMOUNT = 100
 BIG_BLIND_AMOUNT   = 200
 
@@ -22,19 +23,17 @@ class PokerGameController(object):
     """
 
     def __init__(self, num_decks, starting_chips):
+        self.player_list = []
+        self.dealer = 0
         self.starting_chips = starting_chips
-        self.cards_per_hand = 2
         self.player_chips = {}
         self.decision_list = []
         self.player_hand_dict = {} 
         self.num_players = 2
 
     def initGame(self, player_list):
-        """ Set a random ordering for players and initial Dealer """
-        self.dealer = 0
         self.player_list = player_list
-        self.game_state = PokerGameState(self.player_list, self.starting_chips) 
-
+        self.game_state = PokerGameState(self.player_list, self.starting_chips)
 
     """ TODO: handle running out of cards in the deck """
     def runGame(self):
@@ -229,7 +228,7 @@ class PokerGameController(object):
 
     def dealCards(self, dealer):
         """ Deals the cards in round robin order, starting with the player after the Dealer """
-        for card_num in range(self.cards_per_hand):
+        for card_num in range(CARDS_PER_PLAYER):
             for player in self.game_state.player_list[(dealer+1)%self.num_players:]+self.game_state.player_list[:(dealer+1)%self.num_players]:
                 """ Deal one card """
                 self.player_hand_dict[player.name].append(self.game_state.deck.popCard())
