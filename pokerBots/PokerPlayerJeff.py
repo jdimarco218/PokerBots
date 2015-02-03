@@ -26,9 +26,6 @@ class PokerPlayerJeff(PokerPlayer):
         super(PokerPlayerJeff, self).__init__(name, pgc)
         if os.path.isfile(resultsPath):
             os.remove(resultsPath)
-        #self.myHandDict = {}
-        #self.myHandDict[self.name] = [] 
-        #self.myHandRanking = HandRanking([self], self.myHandDict)
         self.myHandRanking = HandRanking([self], {})
 
     def getPokerDecision(self, game_state, decision_list):

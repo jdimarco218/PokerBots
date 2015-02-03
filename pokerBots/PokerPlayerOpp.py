@@ -8,7 +8,10 @@
 import os
 
 from PokerPlayer import PokerPlayer
-from HeadsUp import PokerDecision
+from HeadsUp   import PokerGameState
+from HeadsUp   import PokerDecision
+from HandRanking import HandRanking
+from Card        import Card
 
 #DEBUG = False
 DEBUG = True 
